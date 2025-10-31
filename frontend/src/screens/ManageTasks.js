@@ -1,17 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Alert, View } from "react-native";
-import { TextInput, Button, Text, Card, Snackbar } from "react-native-paper";
+import {
+  TextInput,Button,Text,Card,Snackbar,Appbar,Modal,Portal,Provider,
+} from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getTasks, createTask, updateTask, deleteTask, getUsers } from "../services/api";
+import {getTasks,createTask,updateTask,deleteTask,getUsers,
+} from "../services/api";
 
 const ManageTasks = () => {
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ title: "", description: "", status: "", assigned_to: null, comment: "" });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    status: "",
+    assigned_to: null,
+    comment: "",
+  });
   const [editingTask, setEditingTask] = useState(null);
   const [token, setToken] = useState("");
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const fetchTokenAndData = async () => {
@@ -21,14 +31,17 @@ const ManageTasks = () => {
 
       try {
         const usersRes = await getUsers(t);
-        const normalizedUsers = (usersRes.data || []).map(u => ({ ...u, id: Number(u.id) }));
+        const normalizedUsers = (usersRes.data || []).map((u) => ({
+          ...u,
+          id: Number(u.id),
+        }));
         setUsers(normalizedUsers);
 
         const tasksRes = await getTasks(t);
         const tasksArray = Array.isArray(tasksRes.data) ? tasksRes.data : [];
-        const normalizedTasks = tasksArray.map(task => ({
+        const normalizedTasks = tasksArray.map((task) => ({
           ...task,
-          assigned_to: task.assigned_to ? Number(task.assigned_to) : null
+          assigned_to: task.assigned_to ? Number(task.assigned_to) : null,
         }));
         setTasks(normalizedTasks);
       } catch (err) {
@@ -38,18 +51,6 @@ const ManageTasks = () => {
     };
     fetchTokenAndData();
   }, []);
-
-  useEffect(() => {
-    if (editingTask) {
-      setForm({
-        title: editingTask.title,
-        description: editingTask.description,
-        status: editingTask.status,
-        assigned_to: editingTask.assigned_to,
-        comment: editingTask.comment
-      });
-    }
-  }, [editingTask]);
 
   const saveTask = async () => {
     try {
@@ -70,18 +71,24 @@ const ManageTasks = () => {
       }
 
       setSnackbarVisible(true);
-      setForm({ title: "", description: "", status: "", assigned_to: null, comment: "" });
-      setEditingTask(null);
 
-      // Refresh tasks
       const tasksRes = await getTasks(token);
       const tasksArray = Array.isArray(tasksRes.data) ? tasksRes.data : [];
-      const normalizedTasks = tasksArray.map(task => ({
+      const normalizedTasks = tasksArray.map((task) => ({
         ...task,
-        assigned_to: task.assigned_to ? Number(task.assigned_to) : null
+        assigned_to: task.assigned_to ? Number(task.assigned_to) : null,
       }));
       setTasks(normalizedTasks);
 
+      setTimeout(() => setVisible(false), 2000);
+      setForm({
+        title: "",
+        description: "",
+        status: "",
+        assigned_to: null,
+        comment: "",
+      });
+      setEditingTask(null);
     } catch (err) {
       console.error("Error saving task:", err.response?.data || err.message);
       Alert.alert("Error", "Failed to save task");
@@ -91,7 +98,7 @@ const ManageTasks = () => {
   const handleDeleteTask = async (task) => {
     try {
       await deleteTask(task.id, token);
-      setTasks(prev => prev.filter(t => t.id !== task.id));
+      setTasks((prev) => prev.filter((t) => t.id !== task.id));
       setSnackbarMessage("Task deleted successfully ✅");
       setSnackbarVisible(true);
     } catch (err) {
@@ -101,63 +108,46 @@ const ManageTasks = () => {
   };
 
   return (
-    <>
+    <Provider>
+      
+      <Appbar.Header>
+        <Appbar.Content title="" />
+        <Button
+          mode="contained-tonal"
+          compact
+          style={styles.smallButton}
+          onPress={() => {
+            setEditingTask(null);
+            setForm({
+              title: "",
+              description: "",
+              status: "",
+              assigned_to: null,
+              comment: "",
+            });
+            setVisible(true);
+          }}
+        >
+          Create Task
+        </Button>
+      </Appbar.Header>
+
       <ScrollView style={styles.container}>
-        <Text style={styles.heading}>Manage Tasks</Text>
-
-        {/* Task Form */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <TextInput
-              label="Title"
-              value={form.title}
-              onChangeText={text => setForm({ ...form, title: text })}
-              style={styles.input}
-            />
-            <TextInput
-              label="Description"
-              value={form.description}
-              onChangeText={text => setForm({ ...form, description: text })}
-              style={styles.input}
-            />
-            <TextInput
-              label="Status"
-              value={form.status}
-              onChangeText={text => setForm({ ...form, status: text })}
-              style={styles.input}
-            />
-            <TextInput
-              label="Assigned To (User ID)"
-              value={form.assigned_to ? form.assigned_to.toString() : ""}
-              onChangeText={text => setForm({ ...form, assigned_to: text ? Number(text) : null })}
-              style={styles.input}
-            />
-            <TextInput
-              label="Comment"
-              value={form.comment}
-              onChangeText={text => setForm({ ...form, comment: text })}
-              style={styles.input}
-            />
-
-            <Button mode="contained" onPress={saveTask} style={styles.button}>
-              {editingTask ? "Update Task" : "Create Task"}
-            </Button>
-          </Card.Content>
-        </Card>
-
         <Text style={styles.subheading}>All Tasks:</Text>
 
         {tasks.length === 0 ? (
           <Text style={styles.noTask}>No tasks available</Text>
         ) : (
-          tasks.map(task => (
+          tasks.map((task) => (
             <Card
               key={task.id}
-              style={[styles.taskCard, task.status === "Completed" && styles.completedCard]}
+              style={[
+                styles.taskCard,
+                task.status === "Completed" && styles.completedCard,
+              ]}
             >
               <Card.Content>
                 <View style={styles.taskRow}>
-                  {/* Left side text */}
                   <View style={styles.taskInfo}>
                     <Text style={styles.title}>{task.title}</Text>
                     <Text style={styles.status}>Status: {task.status}</Text>
@@ -165,15 +155,26 @@ const ManageTasks = () => {
                     <Text>Comment: {task.comment || "None"}</Text>
                   </View>
 
-                  {/* Right side buttons */}
                   <View style={styles.taskActions}>
+                   
                     <Button
-                      mode="outlined"
-                      onPress={() => setEditingTask(task)}
-                      style={styles.editButton}
-                    >
+                          mode="outlined"
+                          onPress={() => {
+                          setEditingTask(task);
+                          setForm({
+                           title: task.title,
+                           description: task.description,
+                          status: task.status,
+                          assigned_to: task.assigned_to,
+                          comment: task.comment,
+                            });
+                             setVisible(true);
+                            }}
+                          style={styles.editButton}
+                           >
                       Edit
                     </Button>
+
 
                     <Button
                       mode="contained"
@@ -191,6 +192,64 @@ const ManageTasks = () => {
         )}
       </ScrollView>
 
+      
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={() => setVisible(false)}
+          contentContainerStyle={styles.modalBox}
+        >
+          <Card>
+            <Card.Content>
+              <Text style={styles.heading}>
+                {editingTask ? "Edit Task" : "Create Task"}
+              </Text>
+
+              <TextInput
+                label="Title"
+                value={form.title}
+                onChangeText={(text) => setForm({ ...form, title: text })}
+                style={styles.input}
+              />
+              <TextInput
+                label="Description"
+                value={form.description}
+                onChangeText={(text) => setForm({ ...form, description: text })}
+                style={styles.input}
+              />
+              <TextInput
+                label="Status"
+                value={form.status}
+                onChangeText={(text) => setForm({ ...form, status: text })}
+                style={styles.input}
+              />
+              <TextInput
+                label="Assigned To (User ID)"
+                value={form.assigned_to ? form.assigned_to.toString() : ""}
+                onChangeText={(text) =>
+                  setForm({ ...form, assigned_to: text ? Number(text) : null })
+                }
+                style={styles.input}
+              />
+              <TextInput
+                label="Comment"
+                value={form.comment}
+                onChangeText={(text) => setForm({ ...form, comment: text })}
+                style={styles.input}
+              />
+
+              <Button mode="contained" onPress={saveTask} style={styles.button}>
+                {editingTask ? "Update Task" : "Create Task"}
+              </Button>
+
+              <Button onPress={() => setVisible(false)} style={{ marginTop: 5 }}>
+                Cancel
+              </Button>
+            </Card.Content>
+          </Card>
+        </Modal>
+      </Portal>
+
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
@@ -202,16 +261,27 @@ const ManageTasks = () => {
       >
         {snackbarMessage}
       </Snackbar>
-    </>
+    </Provider>
   );
 };
 
 const styles = StyleSheet.create({
   container: { padding: 15, backgroundColor: "#f5f5f5", flex: 1 },
-  heading: { fontSize: 24, fontWeight: "bold", marginBottom: 10, color: "#333" },
-  subheading: { fontSize: 20, fontWeight: "bold", marginTop: 20, marginBottom: 10 },
-  card: { marginVertical: 10, padding: 10, borderRadius: 12, backgroundColor: "#fff", elevation: 3 },
-  taskCard: { marginVertical: 5, borderRadius: 12, backgroundColor: "#fff", elevation: 2, padding: 10 },
+  heading: { fontSize: 20, fontWeight: "bold", marginBottom: 10, textAlign: "center" },
+  subheading: { fontSize: 20, fontWeight: "bold", marginTop: 10, marginBottom: 10 },
+  smallButton: {
+    marginRight: 10,
+    borderRadius: 8,
+    height: 35,
+    justifyContent: "center",
+  },
+  taskCard: {
+    marginVertical: 5,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    elevation: 2,
+    padding: 10,
+  },
   completedCard: { borderLeftWidth: 5, borderLeftColor: "#4caf50" },
   input: { marginBottom: 10, backgroundColor: "#fff" },
   button: { marginTop: 10, justifyContent: "center" },
@@ -222,7 +292,14 @@ const styles = StyleSheet.create({
   deleteButton: { width: 100 },
   title: { fontSize: 18, fontWeight: "bold", marginBottom: 5, color: "#333" },
   status: { fontSize: 14, marginBottom: 5, color: "#555" },
-  noTask: { textAlign: "center", marginTop: 20, fontStyle: "italic", color: "#888" }
+  noTask: { textAlign: "center", marginTop: 20, fontStyle: "italic", color: "#888" },
+  modalBox: {
+    backgroundColor: "white",
+    padding: 20,
+    margin: 20,
+    borderRadius: 12,
+    elevation: 5,
+  },
 });
 
 export default ManageTasks;

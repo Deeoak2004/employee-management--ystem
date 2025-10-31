@@ -29,7 +29,7 @@ const LoginScreen = ({ navigation }) => {
       setPasswordError("Password is required");
       return;
     }
-       // ✅ Gmail-only validation check
+       
   const gmailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
   if (!gmailPattern.test(email)) {
     setEmailError("plase enter the correct email");
