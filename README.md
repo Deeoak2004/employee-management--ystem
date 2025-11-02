@@ -39,8 +39,10 @@ Update task status
 
 ✅ Secure user authentication (Admin & Employee)
 ✅ Task creation, update, and deletion
+✅ Employee/Admin creation, update, and deletion
 ✅ Role-based access control
 ✅ Real-time UI updates
 ✅ Modern and responsive UI using React Native Paper
+
 
 
