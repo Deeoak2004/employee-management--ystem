@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker 
 
 password = quote_plus("Deepak@2004")  
-SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://root:{password}@localhost:3306/task_management" 
+SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://deepak:{password}@172.17.12.163:3306/task_management" 
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

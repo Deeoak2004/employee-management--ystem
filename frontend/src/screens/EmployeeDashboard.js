@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
-import { TextInput, Button, Portal, Dialog, Paragraph } from "react-native-paper";
+import { TextInput, Button, Portal, Dialog, Paragraph, Menu, Snackbar } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getTasks, updateTask } from "../services/api";
 import { AuthContext } from "../context/AuthContext";
@@ -9,7 +9,10 @@ const EmployeeDashboard = ({ navigation }) => {
   const [tasks, setTasks] = useState([]);
   const [token, setToken] = useState("");
   const [comments, setComments] = useState({});
-  const [visible, setVisible] = useState(false); 
+  const [visible, setVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState({});
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const { logout } = useContext(AuthContext);
 
@@ -28,7 +31,8 @@ const EmployeeDashboard = ({ navigation }) => {
       const tasksData = Array.isArray(res.data) ? res.data : [];
       const normalizedTasks = tasksData.map(task => ({
         ...task,
-        assigned_to: task.assigned_to ? Number(task.assigned_to) : null
+        assigned_to: task.assigned_to ? Number(task.assigned_to) : null,
+        locked: task.status === "Completed"
       }));
       setTasks(normalizedTasks);
     } catch (err) {
@@ -36,33 +40,27 @@ const EmployeeDashboard = ({ navigation }) => {
     }
   };
 
-  const submitComment = async (task) => {
+  const submitTask = async (task) => {
     try {
       if (!token) return;
-      const commentText = comments[task.id] || "";
-      const payload = { ...task, comment: commentText };
+      const payload = { ...task, comment: comments[task.id] || "" };
       await updateTask(task.id, payload, token);
-      Alert.alert("Success", "Comment submitted");
+
+      // Show success Snackbar if completed
+      if (task.status === "Completed") {
+        setSnackbarMessage("Your task has been completed successfully ✅");
+        setSnackbarVisible(true);
+        setTasks(prev =>
+          prev.map(t => t.id === task.id ? { ...t, locked: true } : t)
+        );
+      }
+
       fetchTasks(token);
     } catch (err) {
       console.error("Error updating task:", err);
-      Alert.alert("Error", "Failed to submit comment");
+      Alert.alert("Error", "Failed to update task ❌");
     }
   };
-
-  const markComplete = async (task) => {
-    try {
-      if (!token) return;
-      const payload = { ...task, status: "Completed" };
-      await updateTask(task.id, payload, token);
-      Alert.alert("Success", "Task marked as completed");
-      fetchTasks(token);
-    } catch (err) {
-      console.error("Error updating task:", err);
-      Alert.alert("Error", "Failed to mark task completed");
-    }
-  };
-
 
   const showDialog = () => setVisible(true);
   const hideDialog = () => setVisible(false);
@@ -73,6 +71,8 @@ const EmployeeDashboard = ({ navigation }) => {
     logout();
     navigation.replace("Login");
   };
+
+  const statusOptions = ["Pending", "In-Process", "Completed"];
 
   return (
     <ScrollView style={styles.container}>
@@ -93,9 +93,43 @@ const EmployeeDashboard = ({ navigation }) => {
       ) : (
         tasks.map(task => (
           <View key={task.id} style={[styles.taskCard, task.status === "Completed" && styles.completedCard]}>
-            <Text style={styles.title}>{task.title}</Text>
-            <Text style={styles.status}>Status: {task.status}</Text>
+            <Text style={styles.title}>Title: {task.title}</Text>
+            <Text style={styles.description}>Description: {task.description || "None"}</Text>
             <Text style={styles.commentText}>Comment: {task.comment || "None"}</Text>
+
+            {/* Status Dropdown left-aligned and normal size */}
+            <View style={{ marginBottom: 10, alignItems: "flex-start" }}>
+              <Menu
+                visible={menuVisible[task.id] || false}
+                onDismiss={() => setMenuVisible(prev => ({ ...prev, [task.id]: false }))}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      if (!task.locked) setMenuVisible(prev => ({ ...prev, [task.id]: true }));
+                    }}
+                    disabled={task.locked}
+                    style={{ width: 150, justifyContent: "center" }}
+                    contentStyle={{ height: 40 }}
+                  >
+                    Status: {task.status}
+                  </Button>
+                }
+              >
+                {statusOptions.map(opt => (
+                  <Menu.Item
+                    key={opt}
+                    title={opt}
+                    onPress={() => {
+                      setTasks(prev =>
+                        prev.map(t => t.id === task.id ? { ...t, status: opt } : t)
+                      );
+                      setMenuVisible(prev => ({ ...prev, [task.id]: false }));
+                    }}
+                  />
+                ))}
+              </Menu>
+            </View>
 
             <TextInput
               label="Add Comment"
@@ -105,86 +139,62 @@ const EmployeeDashboard = ({ navigation }) => {
               style={styles.input}
             />
 
+            {/* Submit button right-aligned */}
             <View style={styles.buttonRow}>
               <Button
                 mode="contained"
-                onPress={() => submitComment(task)}
-                buttonColor="#4caf50"
-                style={styles.button}
+                onPress={() => submitTask(task)}
+                style={styles.submitButton}
               >
-                Submit Comment
-              </Button>
-              <Button
-                mode="contained"
-                onPress={() => markComplete(task)}
-                buttonColor="#2196f3"
-                style={styles.button}
-              >
-                Mark Complete
+                Submit
               </Button>
             </View>
           </View>
         ))
       )}
 
-     
+      {/* Logout Dialog */}
+      <Portal>
+        <Dialog
+          visible={visible}
+          onDismiss={hideDialog}
+          style={styles.dialog}
+        >
+          <Dialog.Title style={{ fontSize: 20, textAlign: "center" }}>Logout</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph style={{ fontSize: 16, textAlign: "center" }}>
+              Are you sure you want to logout?
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions style={{ justifyContent: "space-around" }}>
+            <Button onPress={hideDialog}>Cancel</Button>
+            <Button onPress={confirmLogout}>OK</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
-
-
-<Portal>
-  <Dialog
-    visible={visible}
-    onDismiss={hideDialog}
-    style={{
-      width: "35%",         
-      alignSelf: "center",  
-      borderRadius: 15,     
-      elevation: 5          
-    }}
-  >
-    <Dialog.Title style={{ fontSize: 20, textAlign: "center" }}>Logout</Dialog.Title>
-    <Dialog.Content>
-      <Paragraph style={{ fontSize: 16, textAlign: "center" }}>
-        Are you sure you want to logout?
-      </Paragraph>
-    </Dialog.Content>
-    <Dialog.Actions style={{ justifyContent: "space-around" }}>
-      <Button onPress={hideDialog}>Cancel</Button>
-      <Button onPress={confirmLogout}>OK</Button>
-    </Dialog.Actions>
-  </Dialog>
-</Portal>
-</ScrollView>
+      {/* Snackbar for Completed Tasks */}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        action={{
+          label: "OK",
+          onPress: () => setSnackbarVisible(false),
+        }}
+      >
+        {snackbarMessage}
+      </Snackbar>
+    </ScrollView>
   );
-}; 
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 15,
-    backgroundColor: "#f5f5f5",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  logoutButton: {
-    height: 40,
-    justifyContent: "center",
-  },
-  noTaskText: {
-    textAlign: "center",
-    marginTop: 50,
-    fontSize: 16,
-    color: "#888",
-  },
+  container: { flex: 1, padding: 15, backgroundColor: "#f5f5f5" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 15 },
+  heading: { fontSize: 24, fontWeight: "bold", color: "#333" },
+  logoutButton: { height: 40, justifyContent: "center" },
+  noTaskText: { textAlign: "center", marginTop: 50, fontSize: 16, color: "#888" },
   taskCard: {
     backgroundColor: "#fff",
     marginBottom: 15,
@@ -196,39 +206,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 3,
   },
-  completedCard: {
-    borderLeftWidth: 5,
-    borderLeftColor: "#4caf50",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#333",
-  },
-  status: {
-    fontSize: 14,
-    marginBottom: 5,
-    color: "#555",
-  },
-  commentText: {
-    fontSize: 14,
-    marginBottom: 10,
-    color: "#777",
-  },
-  input: {
-    marginBottom: 10,
-    backgroundColor: "#fff",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  button: {
-    flex: 1,
-    marginHorizontal: 5,
-    justifyContent: "center",
-  },
+  completedCard: { borderLeftWidth: 5, borderLeftColor: "#4caf50" },
+  title: { fontSize: 18, fontWeight: "bold", marginBottom: 5, color: "#333" },
+  description: { fontSize: 14, marginBottom: 5, color: "#555" },
+  commentText: { fontSize: 14, marginBottom: 10, color: "#777" },
+  input: { marginBottom: 10, backgroundColor: "#fff" },
+  buttonRow: { flexDirection: "row", justifyContent: "flex-end" },
+  submitButton: { width: 100, justifyContent: "center" },
+  dialog: { width: "35%", alignSelf: "center", borderRadius: 15, elevation: 5 }
 });
 
 export default EmployeeDashboard;

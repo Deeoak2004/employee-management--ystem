@@ -18,10 +18,17 @@ const AdminDashboard = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Top bar with title and logout button */}
+      <View style={styles.topBar}>
+        <Title style={styles.title}></Title>
+        <Button mode="text" onPress={showDialog} textColor="#e53935">
+          Logout
+        </Button>
+      </View>
+
+      {/* Main card */}
       <Card style={styles.card}>
         <Card.Content>
-          <Title style={styles.title}>Admin Dashboard</Title>
-
           <Button
             mode="contained"
             onPress={() => navigation.navigate("ManageEmployees")}
@@ -39,57 +46,53 @@ const AdminDashboard = ({ navigation }) => {
           >
             Manage Tasks
           </Button>
-
-          <Button
-            mode="contained"
-            onPress={showDialog}
-            style={[styles.button, styles.logoutButton]}
-            contentStyle={styles.buttonContent}
-          >
-            Logout
-          </Button>
         </Card.Content>
       </Card>
 
-      {/* logout ke liye Dialogbox add kiya hai
-
-*/}
-
-
-<Portal>
-  <Dialog
-    visible={visible}
-    onDismiss={hideDialog}
-    style={{
-      width: "35%",         
-      alignSelf: "center",  
-      borderRadius: 15,     
-      elevation: 5          
-    }}
-  >
-    <Dialog.Title style={{ fontSize: 20, textAlign: "center" }}>Logout</Dialog.Title>
-    <Dialog.Content>
-      <Paragraph style={{ fontSize: 16, textAlign: "center" }}>
-        Are you sure you want to logout?
-      </Paragraph>
-    </Dialog.Content>
-    <Dialog.Actions style={{ justifyContent: "space-around" }}>
-      <Button onPress={hideDialog}>Cancel</Button>
-      <Button onPress={confirmLogout}>OK</Button>
-    </Dialog.Actions>
-  </Dialog>
-</Portal>
-</View>
+      {/* Logout confirmation dialog */}
+      <Portal>
+        <Dialog
+          visible={visible}
+          onDismiss={hideDialog}
+          style={{
+            width: "35%",
+            alignSelf: "center",
+            borderRadius: 15,
+            elevation: 5,
+          }}
+        >
+          <Dialog.Title style={{ fontSize: 20, textAlign: "center" }}>Logout</Dialog.Title>
+          <Dialog.Content>
+            <Paragraph style={{ fontSize: 16, textAlign: "center" }}>
+              Are you sure you want to logout?
+            </Paragraph>
+          </Dialog.Content>
+          <Dialog.Actions style={{ justifyContent: "space-around" }}>
+            <Button onPress={hideDialog}>Cancel</Button>
+            <Button onPress={confirmLogout}>OK</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </View>
   );
-}; 
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f4f6f9",
-    justifyContent: "center",
-    alignItems: "center",
     padding: 20,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#333",
   },
   card: {
     width: "100%",
@@ -98,13 +101,7 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 5,
     backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 30,
-    color: "#333",
+    alignSelf: "center",
   },
   button: {
     marginVertical: 10,
@@ -118,9 +115,6 @@ const styles = StyleSheet.create({
   buttonContent: {
     height: 50,
     justifyContent: "center",
-  },
-  logoutButton: {
-    backgroundColor: "#e53935",
   },
 });
 

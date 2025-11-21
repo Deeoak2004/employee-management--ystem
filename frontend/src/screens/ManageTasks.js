@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Alert, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import {
-  TextInput,Button,Text,Card,Snackbar,Appbar,Modal,Portal,Provider,
+  TextInput,
+  Button,
+  Text,
+  Card,
+  Snackbar,
+  Appbar,
+  Modal,
+  Portal,
+  Provider,
+  Menu,
 } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {getTasks,createTask,updateTask,deleteTask,getUsers,
-} from "../services/api";
+import { getTasks, createTask, updateTask, deleteTask } from "../services/api";
 
 const ManageTasks = () => {
   const [tasks, setTasks] = useState([]);
@@ -22,6 +30,9 @@ const ManageTasks = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [visible, setVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   useEffect(() => {
     const fetchTokenAndData = async () => {
@@ -30,33 +41,54 @@ const ManageTasks = () => {
       setToken(t);
 
       try {
-        const usersRes = await getUsers(t);
-        const normalizedUsers = (usersRes.data || []).map((u) => ({
-          ...u,
-          id: Number(u.id),
-        }));
-        setUsers(normalizedUsers);
+        const storedUsers = await AsyncStorage.getItem("USERS");
+        const localUsers = storedUsers ? JSON.parse(storedUsers) : [];
+        setUsers(localUsers);
 
         const tasksRes = await getTasks(t);
         const tasksArray = Array.isArray(tasksRes.data) ? tasksRes.data : [];
-        const normalizedTasks = tasksArray.map((task) => ({
-          ...task,
-          assigned_to: task.assigned_to ? Number(task.assigned_to) : null,
-        }));
-        setTasks(normalizedTasks);
+        setTasks(tasksArray);
       } catch (err) {
         console.error("Error fetching data:", err);
-        Alert.alert("Error", "Failed to fetch data");
       }
     };
     fetchTokenAndData();
   }, []);
 
+  const getUserName = (id) => {
+    const u = users.find((user) => user.id === id);
+    return u ? u.name : "Unassigned";
+  };
+
+  const openTaskModal = (task = null) => {
+    setEditingTask(task);
+
+    AsyncStorage.getItem("USERS").then((storedUsers) => {
+      const localUsers = storedUsers ? JSON.parse(storedUsers) : [];
+      setUsers(localUsers);
+    });
+
+    if (task) {
+      setForm({
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        assigned_to: task.assigned_to,
+        comment: task.comment,
+      });
+    } else {
+      setForm({ title: "", description: "", status: "", assigned_to: null, comment: "" });
+    }
+
+    setVisible(true);
+  };
+
   const saveTask = async () => {
     try {
       if (!token) return;
       if (!form.assigned_to) {
-        Alert.alert("Validation Error", "Assigned To is required");
+        setSnackbarMessage("Assigned To is required ❌");
+        setSnackbarVisible(true);
         return;
       }
 
@@ -74,59 +106,46 @@ const ManageTasks = () => {
 
       const tasksRes = await getTasks(token);
       const tasksArray = Array.isArray(tasksRes.data) ? tasksRes.data : [];
-      const normalizedTasks = tasksArray.map((task) => ({
-        ...task,
-        assigned_to: task.assigned_to ? Number(task.assigned_to) : null,
-      }));
-      setTasks(normalizedTasks);
+      setTasks(tasksArray);
 
-      setTimeout(() => setVisible(false), 2000);
-      setForm({
-        title: "",
-        description: "",
-        status: "",
-        assigned_to: null,
-        comment: "",
-      });
+      setVisible(false);
+      setForm({ title: "", description: "", status: "", assigned_to: null, comment: "" });
       setEditingTask(null);
     } catch (err) {
       console.error("Error saving task:", err.response?.data || err.message);
-      Alert.alert("Error", "Failed to save task");
+      setSnackbarMessage("Failed to save task ❌");
+      setSnackbarVisible(true);
     }
   };
 
-  const handleDeleteTask = async (task) => {
+  const openDeleteConfirm = (task) => {
+    setSelectedTask(task);
+    setConfirmVisible(true);
+  };
+
+  const confirmDelete = async () => {
     try {
-      await deleteTask(task.id, token);
-      setTasks((prev) => prev.filter((t) => t.id !== task.id));
+      await deleteTask(selectedTask.id, token);
+      setTasks((prev) => prev.filter((t) => t.id !== selectedTask.id));
       setSnackbarMessage("Task deleted successfully ✅");
       setSnackbarVisible(true);
     } catch (err) {
       console.error("Delete error:", err);
-      Alert.alert("Error", "Failed to delete task");
+      setSnackbarMessage("Failed to delete task ❌");
+      setSnackbarVisible(true);
     }
+    setConfirmVisible(false);
   };
 
   return (
     <Provider>
-      
-      <Appbar.Header>
+      <Appbar.Header style={{ backgroundColor: "#f6f6f6" }}>
         <Appbar.Content title="" />
         <Button
-          mode="contained-tonal"
+          mode="contained"
           compact
           style={styles.smallButton}
-          onPress={() => {
-            setEditingTask(null);
-            setForm({
-              title: "",
-              description: "",
-              status: "",
-              assigned_to: null,
-              comment: "",
-            });
-            setVisible(true);
-          }}
+          onPress={() => openTaskModal(null)}
         >
           Create Task
         </Button>
@@ -141,45 +160,31 @@ const ManageTasks = () => {
           tasks.map((task) => (
             <Card
               key={task.id}
-              style={[
-                styles.taskCard,
-                task.status === "Completed" && styles.completedCard,
-              ]}
+              style={[styles.taskCard, task.status === "Completed" && styles.completedCard]}
             >
               <Card.Content>
                 <View style={styles.taskRow}>
                   <View style={styles.taskInfo}>
-                    <Text style={styles.title}>{task.title}</Text>
-                    <Text style={styles.status}>Status: {task.status}</Text>
-                    <Text>Assigned To: {task.assigned_to || "Unassigned"}</Text>
+                    <Text style={styles.title}>Title: {task.title}</Text>
+                    <Text>Description: {task.description || "None"}</Text>
+                    <Text>Status: {task.status}</Text>
+                    <Text>Assigned To: {getUserName(task.assigned_to)}</Text>
                     <Text>Comment: {task.comment || "None"}</Text>
                   </View>
 
                   <View style={styles.taskActions}>
-                   
                     <Button
-                          mode="outlined"
-                          onPress={() => {
-                          setEditingTask(task);
-                          setForm({
-                           title: task.title,
-                           description: task.description,
-                          status: task.status,
-                          assigned_to: task.assigned_to,
-                          comment: task.comment,
-                            });
-                             setVisible(true);
-                            }}
-                          style={styles.editButton}
-                           >
+                      mode="outlined"
+                      onPress={() => openTaskModal(task)}
+                      style={styles.editButton}
+                    >
                       Edit
                     </Button>
-
 
                     <Button
                       mode="contained"
                       buttonColor="#f44336"
-                      onPress={() => handleDeleteTask(task)}
+                      onPress={() => openDeleteConfirm(task)}
                       style={styles.deleteButton}
                     >
                       Delete
@@ -192,18 +197,12 @@ const ManageTasks = () => {
         )}
       </ScrollView>
 
-      
+      {/* CREATE / EDIT MODAL */}
       <Portal>
-        <Modal
-          visible={visible}
-          onDismiss={() => setVisible(false)}
-          contentContainerStyle={styles.modalBox}
-        >
+        <Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={styles.modalBox}>
           <Card>
             <Card.Content>
-              <Text style={styles.heading}>
-                {editingTask ? "Edit Task" : "Create Task"}
-              </Text>
+              <Text style={styles.heading}>{editingTask ? "Edit Task" : "Create Task"}</Text>
 
               <TextInput
                 label="Title"
@@ -223,14 +222,35 @@ const ManageTasks = () => {
                 onChangeText={(text) => setForm({ ...form, status: text })}
                 style={styles.input}
               />
-              <TextInput
-                label="Assigned To (User ID)"
-                value={form.assigned_to ? form.assigned_to.toString() : ""}
-                onChangeText={(text) =>
-                  setForm({ ...form, assigned_to: text ? Number(text) : null })
+
+              {/* Assigned To dropdown - only Employees */}
+              <Menu
+                visible={menuVisible}
+                onDismiss={() => setMenuVisible(false)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={() => setMenuVisible(true)}
+                    style={{ marginBottom: 10 }}
+                  >
+                    {form.assigned_to ? getUserName(form.assigned_to) : "Select Assigned User"}
+                  </Button>
                 }
-                style={styles.input}
-              />
+              >
+                {users
+                  .filter((user) => user.role === "Employee") // 👈 Filter only Employees
+                  .map((user) => (
+                    <Menu.Item
+                      key={user.id}
+                      title={user.name}
+                      onPress={() => {
+                        setForm({ ...form, assigned_to: user.id });
+                        setMenuVisible(false);
+                      }}
+                    />
+                  ))}
+              </Menu>
+
               <TextInput
                 label="Comment"
                 value={form.comment}
@@ -238,13 +258,33 @@ const ManageTasks = () => {
                 style={styles.input}
               />
 
-              <Button mode="contained" onPress={saveTask} style={styles.button}>
-                {editingTask ? "Update Task" : "Create Task"}
-              </Button>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Button mode="contained" onPress={saveTask} style={{ flex: 1, marginRight: 8 }}>
+                  {editingTask ? "Update Task" : "Create Task"}
+                </Button>
+                <Button mode="outlined" onPress={() => setVisible(false)} style={{ flex: 1 }}>
+                  Cancel
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        </Modal>
+      </Portal>
 
-              <Button onPress={() => setVisible(false)} style={{ marginTop: 5 }}>
-                Cancel
-              </Button>
+      {/* DELETE CONFIRM MODAL */}
+      <Portal>
+        <Modal visible={confirmVisible} onDismiss={() => setConfirmVisible(false)} contentContainerStyle={styles.confirmModal}>
+          <Card>
+            <Card.Content>
+              <Text style={styles.confirmText}>Are you sure you want to delete this task?</Text>
+              <View style={styles.confirmRow}>
+                <Button mode="contained" buttonColor="#f44336" onPress={confirmDelete} style={styles.confirmButton}>
+                  YES
+                </Button>
+                <Button mode="outlined" onPress={() => setConfirmVisible(false)} style={styles.confirmButton}>
+                  NO
+                </Button>
+              </View>
             </Card.Content>
           </Card>
         </Modal>
@@ -254,10 +294,7 @@ const ManageTasks = () => {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
-        action={{
-          label: "OK",
-          onPress: () => setSnackbarVisible(false),
-        }}
+        action={{ label: "OK", onPress: () => setSnackbarVisible(false) }}
       >
         {snackbarMessage}
       </Snackbar>
@@ -268,38 +305,23 @@ const ManageTasks = () => {
 const styles = StyleSheet.create({
   container: { padding: 15, backgroundColor: "#f5f5f5", flex: 1 },
   heading: { fontSize: 20, fontWeight: "bold", marginBottom: 10, textAlign: "center" },
-  subheading: { fontSize: 20, fontWeight: "bold", marginTop: 10, marginBottom: 10 },
-  smallButton: {
-    marginRight: 10,
-    borderRadius: 8,
-    height: 35,
-    justifyContent: "center",
-  },
-  taskCard: {
-    marginVertical: 5,
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    elevation: 2,
-    padding: 10,
-  },
+  subheading: { fontSize: 18, fontWeight: "bold", marginTop: 10, marginBottom: 10 },
+  smallButton: { marginRight: 10, borderRadius: 8, height: 35, justifyContent: "center" },
+  taskCard: { marginVertical: 5, borderRadius: 12, backgroundColor: "#fff", elevation: 2, padding: 10 },
   completedCard: { borderLeftWidth: 5, borderLeftColor: "#4caf50" },
   input: { marginBottom: 10, backgroundColor: "#fff" },
-  button: { marginTop: 10, justifyContent: "center" },
   taskRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   taskInfo: { flex: 1 },
   taskActions: { justifyContent: "center", alignItems: "flex-end" },
   editButton: { marginBottom: 8, width: 100 },
   deleteButton: { width: 100 },
-  title: { fontSize: 18, fontWeight: "bold", marginBottom: 5, color: "#333" },
-  status: { fontSize: 14, marginBottom: 5, color: "#555" },
+  title: { fontSize: 16, fontWeight: "bold", marginBottom: 5, color: "#333" },
   noTask: { textAlign: "center", marginTop: 20, fontStyle: "italic", color: "#888" },
-  modalBox: {
-    backgroundColor: "white",
-    padding: 20,
-    margin: 20,
-    borderRadius: 12,
-    elevation: 5,
-  },
+  modalBox: { backgroundColor: "white", padding: 20, marginHorizontal: "30%", borderRadius: 12, elevation: 5, width: "40%", alignSelf: "center" },
+  confirmModal: { backgroundColor: "white", padding: 18, marginHorizontal: 40, borderRadius: 12, elevation: 5, width: "25%", alignSelf: "center" },
+  confirmText: { fontSize: 16, marginBottom: 12, textAlign: "center" },
+  confirmRow: { flexDirection: "row", justifyContent: "space-between" },
+  confirmButton: { marginHorizontal: 6, minWidth: 90 },
 });
 
 export default ManageTasks;
