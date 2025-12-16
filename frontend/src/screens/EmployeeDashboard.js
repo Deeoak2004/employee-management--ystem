@@ -160,15 +160,15 @@ const EmployeeDashboard = ({ navigation }) => {
           onDismiss={hideDialog}
           style={styles.dialog}
         >
-          <Dialog.Title style={{ fontSize: 20, textAlign: "center" }}>Logout</Dialog.Title>
+          <Dialog.Title style={{ fontSize: 20, textAlign: "center" }}>Logout confirmation</Dialog.Title>
           <Dialog.Content>
             <Paragraph style={{ fontSize: 16, textAlign: "center" }}>
               Are you sure you want to logout?
             </Paragraph>
           </Dialog.Content>
           <Dialog.Actions style={{ justifyContent: "space-around" }}>
-            <Button onPress={hideDialog}>Cancel</Button>
-            <Button onPress={confirmLogout}>OK</Button>
+            <Button onPress={hideDialog}><button style={styles.censel}>Censel</button></Button>
+            <Button onPress={confirmLogout}><button style={styles.logout}>Yes,Log out !</button></Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -205,6 +205,37 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 3,
+  }, logout:{
+    //backgroundColor:"#fc0d0dff",
+    //margin:340,
+    borderColor: "#e91224ff",
+    borderWidth: 1,
+    borderRadius: 5,
+    backgroundColor :"#bb0817ff",
+    paddingHorizontal: 10,
+    width: "100%",
+    //color: "#0a07beff",
+    fontSize: 13,
+    //fontWeight: "600",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    //marginTop: 20,
+    paddingVertical:10,
+    paddingHorizontal:80,
+    padding: 15 ,
+    color:"rgba(243, 243, 232, 0.97)"
+    
+  },
+  censel:
+  {  padding: 15 ,
+    borderColor: "rgba(20, 19, 19, 1)",
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    width: "100%",
+    fontSize: 13,
+    backgroundColor :"#87b6b0ff",
+    color : "#070606ff"
   },
   completedCard: { borderLeftWidth: 5, borderLeftColor: "#4caf50" },
   title: { fontSize: 18, fontWeight: "bold", marginBottom: 5, color: "#333" },
@@ -213,7 +244,13 @@ const styles = StyleSheet.create({
   input: { marginBottom: 10, backgroundColor: "#fff" },
   buttonRow: { flexDirection: "row", justifyContent: "flex-end" },
   submitButton: { width: 100, justifyContent: "center" },
-  dialog: { width: "35%", alignSelf: "center", borderRadius: 15, elevation: 5 }
+  dialog: { width: "30%",
+    alignSelf: "center",
+    borderRadius: 15,
+    elevation: 5,
+
+    
+    }
 });
 
 export default EmployeeDashboard;

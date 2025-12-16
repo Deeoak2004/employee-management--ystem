@@ -27,3 +27,16 @@ def update_task(task_id: int, task: schemas.TaskUpdate, db: Session = Depends(ge
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     
     return crud.delete_task(db, task_id)
+
+
+@router.get("/task-status-count")
+def get_task_status_count(db: Session = Depends(get_db)):
+    pending = db.query(models.Task).filter(models.Task.status == "Pending").count()
+    in_process = db.query(models.Task).filter(models.Task.status == "In-Process").count()
+    completed = db.query(models.Task).filter(models.Task.status == "Completed").count()
+
+    return {
+        "pending": pending,
+        "in_process": in_process,
+        "completed": completed
+    }

@@ -20,7 +20,7 @@ def create_user(db: Session, user: schemas.UserCreate):
         db.rollback()
         raise HTTPException(status_code=400, detail="User with this email already exists")
 
-def get_users(db: Session, skip=0, limit=10):
+def get_users(db: Session, skip=0, limit=100):
     
     return db.query(models.User).offset(skip).limit(limit).all()
 
@@ -69,7 +69,7 @@ def create_task(db: Session, task: schemas.TaskCreate):
 
 def get_tasks(db: Session, current_user: models.User):
     if current_user.role == "Admin":
-        return db.query(models.Task).all()  # Admin → sab tasks
+        return db.query(models.Task).all()  
     else:
         return db.query(models.Task).filter(models.Task.assigned_to == current_user.id).all()  # Employee → assigned tasks
 

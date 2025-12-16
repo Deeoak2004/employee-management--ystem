@@ -15,7 +15,7 @@ app = FastAPI(
 
 
 origins = [
-    "http://localhost:8081",  # Frontend ka URL
+    "http://localhost:8081",  
 ]
 app.add_middleware(
     CORSMiddleware,

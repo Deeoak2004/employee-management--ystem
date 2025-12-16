@@ -13,9 +13,11 @@ import {
   Menu,
 } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from '@react-navigation/native';
 import { getTasks, createTask, updateTask, deleteTask } from "../services/api";
 
 const ManageTasks = () => {
+  const navigation = useNavigation();
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
@@ -25,6 +27,9 @@ const ManageTasks = () => {
     assigned_to: null,
     comment: "",
   });
+  const [suggestions, setSuggestions] = useState([]);      ////add kiya
+const allowedStatus = ["Pending", "In-Process", ""];
+
   const [editingTask, setEditingTask] = useState(null);
   const [token, setToken] = useState("");
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -85,7 +90,18 @@ const ManageTasks = () => {
 
   const saveTask = async () => {
     try {
-      if (!token) return;
+      if (!token) return; 
+
+       if (
+      !form.title.trim() ||
+      !form.description.trim() ||
+      !form.status.trim() ||
+      !form.comment.trim()
+    ) {
+      setSnackbarMessage("All fields are required ❌");
+      setSnackbarVisible(true);
+      return;
+    }
       if (!form.assigned_to) {
         setSnackbarMessage("Assigned To is required ❌");
         setSnackbarVisible(true);
@@ -140,6 +156,15 @@ const ManageTasks = () => {
   return (
     <Provider>
       <Appbar.Header style={{ backgroundColor: "#f6f6f6" }}>
+       {/* <Button
+            mode="text"
+            onPress={() => navigation.goBack()}
+            style={styles.primarybutton }//backgroundColor:"#6200EE"
+            labelStyle = {styles.primarybuttonlabel}
+          >
+            Home
+          </Button>*/}
+        
         <Appbar.Content title="" />
         <Button
           mode="contained"
@@ -216,12 +241,50 @@ const ManageTasks = () => {
                 onChangeText={(text) => setForm({ ...form, description: text })}
                 style={styles.input}
               />
-              <TextInput
+              {/*<TextInput
                 label="Status"
                 value={form.status}
                 onChangeText={(text) => setForm({ ...form, status: text })}
                 style={styles.input}
-              />
+              />*/}
+              <TextInput
+              label="Status"
+               value={form.status}
+              onChangeText={(text) => {
+               setForm({ ...form, status: text });
+
+                if (text.length === 0) {
+              setSuggestions([]);
+              return;
+             }
+
+              const filter = allowedStatus.filter((item) =>
+             item.toLowerCase().startsWith(text.toLowerCase())
+             );
+
+    setSuggestions(filter);
+  }}
+  style={styles.input}
+/>
+
+{/* Suggestion list */}
+{suggestions.length > 0 && (
+  <Card style={{ padding: 8, marginBottom: 10 }}>
+    {suggestions.map((item, index) => (
+      <Text
+        key={index}
+        onPress={() => {
+          setForm({ ...form, status: item });
+          setSuggestions([]);
+        }}
+        style={{ paddingVertical: 6, fontSize: 16 }}
+      >
+        {item}
+      </Text>
+    ))}
+  </Card>
+)}
+
 
               {/* Assigned To dropdown - only Employees */}
               <Menu
@@ -238,7 +301,7 @@ const ManageTasks = () => {
                 }
               >
                 {users
-                  .filter((user) => user.role === "Employee") // 👈 Filter only Employees
+                  .filter((user) => user.role === "Employee") 
                   .map((user) => (
                     <Menu.Item
                       key={user.id}
@@ -303,6 +366,19 @@ const ManageTasks = () => {
 };
 
 const styles = StyleSheet.create({
+  
+  primarybutton: {
+    backgroundColor: "#612da8ff",   // Dark Blue
+    borderRadius: 10,
+    paddingVertical: 0.1,
+    paddingHorizontal: 1,
+  },
+  primarybuttonlabel: {
+    color: "#FFFFFF",             // White Text
+    //fontWeight: "bold",
+    fontSize: 15,
+  },
+
   container: { padding: 15, backgroundColor: "#f5f5f5", flex: 1 },
   heading: { fontSize: 20, fontWeight: "bold", marginBottom: 10, textAlign: "center" },
   subheading: { fontSize: 18, fontWeight: "bold", marginTop: 10, marginBottom: 10 },

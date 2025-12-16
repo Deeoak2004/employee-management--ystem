@@ -14,11 +14,16 @@ import {
 } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from "@react-navigation/native";
+import { useNavigation } from '@react-navigation/native';  ///add   kiya hai
+const allowedRoles = ["Employee", "Admin"];
+ 
+
 import { getUsers, createUser, updateUser, deleteUser } from "../services/api";
 
 const STORAGE_KEY = "USERS";
 
 const ManageEmployees = () => {
+  const navigation = useNavigation();  //add
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -132,6 +137,13 @@ const ManageEmployees = () => {
       console.error(err);
       setMessage("This Gmail already exists");
     }
+     
+
+    if (!allowedRoles.includes(form.role)) {
+  setMessage("Role is invalid! Only Employee or Admin allowed");
+  return;
+}
+     
   };
 
   const handleEditUser = (user) => {
@@ -172,6 +184,18 @@ const ManageEmployees = () => {
   return (
     <Provider>
       <Appbar.Header style={{ backgroundColor: "#f6f6f6" }}>
+        {/* <Button
+    mode="text"
+    onPress={() => navigation.goBack()}
+    //style={{ marginRight: 10 }}
+    style={styles.primarybutton }//backgroundColor:"#6200EE"
+            labelStyle = {styles.primarybuttonlabel}
+    
+  >
+    Home
+  </Button>*/}
+
+        
         <Appbar.Content title="" />
         <Button
           mode="contained"
@@ -191,12 +215,12 @@ const ManageEmployees = () => {
         <Text style={styles.tableHeading}>All Employees/Admins</Text>
 
         <DataTable>
-          <DataTable.Header>
-            <DataTable.Title>Sr. No.</DataTable.Title>
-            <DataTable.Title>Name</DataTable.Title>
-            <DataTable.Title>Email</DataTable.Title>
-            <DataTable.Title>Role</DataTable.Title>
-            <DataTable.Title>Action</DataTable.Title>
+          <DataTable.Header  style={styles.headerRow}>
+            <DataTable.Title textStyle={styles.headerText}>Sr. No.</DataTable.Title>
+            <DataTable.Title textStyle={styles.headerText}>Name</DataTable.Title>
+            <DataTable.Title textStyle={styles.headerText}>Email</DataTable.Title>
+            <DataTable.Title textStyle={styles.headerText}>Role</DataTable.Title>
+            <DataTable.Title textStyle={styles.headerText}><b>Action</b></DataTable.Title>
           </DataTable.Header>
 
           {users.map((user, index) => (
@@ -329,6 +353,32 @@ const ManageEmployees = () => {
 };
 
 const styles = StyleSheet.create({
+
+  headerRow: {
+  backgroundColor: "#f5f5f5",
+  //backgroundColor: "#3db12eff"   ,
+  height: 50,                   
+  borderRadius: 6,
+},
+
+headerText: {
+  fontSize: 15,
+  fontWeight: "bold",
+  textAlign: "center",
+},
+primarybutton: {
+    backgroundColor: "#612da8ff",   // Dark Blue
+    borderRadius: 16,
+    paddingVertical: 0.1,
+    paddingHorizontal: 1,
+  },
+  primarybuttonlabel: {
+    color: "#FFFFFF",             // White Text
+    //fontWeight: "bold",
+    fontSize: 15,
+  },
+
+
   container: { flex: 1, padding: 15, backgroundColor: "#f5f5f5" },
   addButton: { marginRight: 10, alignSelf: "center" },
   tableHeading: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
