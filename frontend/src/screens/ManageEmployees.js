@@ -12,6 +12,8 @@ import {
   Provider,
   Snackbar,
 } from "react-native-paper";
+import { useWindowDimensions } from "react-native";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from "@react-navigation/native";
 import { useNavigation } from '@react-navigation/native';  ///add   kiya hai
@@ -24,6 +26,9 @@ const STORAGE_KEY = "USERS";
 
 const ManageEmployees = () => {
   const navigation = useNavigation();  //add
+   const { width } = useWindowDimensions();
+    const isWeb = width > 768;
+
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -211,24 +216,29 @@ const ManageEmployees = () => {
         </Button>
       </Appbar.Header>
 
-      <ScrollView style={styles.container}>
-        <Text style={styles.tableHeading}>All Employees/Admins</Text>
+       <ScrollView style={styles.container}> 
 
+
+        <Text style={styles.tableHeading}>All Employees/Admins</Text>
+          <ScrollView horizontal={!isWeb} style={{ marginBottom: 20 }}> {/* Horizontal scroll */}
+
+        
+     <View>
         <DataTable>
           <DataTable.Header  style={styles.headerRow}>
-            <DataTable.Title textStyle={styles.headerText}>Sr. No.</DataTable.Title>
-            <DataTable.Title textStyle={styles.headerText}>Name</DataTable.Title>
-            <DataTable.Title textStyle={styles.headerText}>Email</DataTable.Title>
-            <DataTable.Title textStyle={styles.headerText}>Role</DataTable.Title>
-            <DataTable.Title textStyle={styles.headerText}><b>Action</b></DataTable.Title>
+            <DataTable.Title  style ={{minWidth :70}} textStyle={styles.headerText}><Text>Sr.No.</Text></DataTable.Title>
+            <DataTable.Title  style ={{minWidth :100}} textStyle={styles.headerText}><Text>Name</Text></DataTable.Title>
+            <DataTable.Title style ={{minWidth :180}} textStyle={styles.headerText}><Text>Email</Text></DataTable.Title>
+            <DataTable.Title style ={{minWidth :150}} textStyle={styles.headerText}><Text>Role</Text></DataTable.Title>
+            <DataTable.Title style ={{minWidth :100}} textStyle={styles.headerText}><Text>Action</Text></DataTable.Title>
           </DataTable.Header>
 
           {users.map((user, index) => (
             <DataTable.Row key={user.id}>
-              <DataTable.Cell>{index + 1}</DataTable.Cell>
-              <DataTable.Cell>{user.name}</DataTable.Cell>
-              <DataTable.Cell>{user.email}</DataTable.Cell>
-              <DataTable.Cell>{user.role}</DataTable.Cell>
+              <DataTable.Cell style ={{minWidth :70}}><Text>{index + 1}</Text></DataTable.Cell>
+              <DataTable.Cell style ={{minWidth :120}}><Text>{user.name}</Text></DataTable.Cell>
+              <DataTable.Cell style ={{minWidth :180}}><Text>{user.email}</Text></DataTable.Cell>
+              <DataTable.Cell style ={{minWidth :100}}><Text>{user.role}</Text></DataTable.Cell>
 
               <DataTable.Cell>
                 <View style={{ flexDirection: "row" }}>
@@ -254,11 +264,20 @@ const ManageEmployees = () => {
             </DataTable.Row>
           ))}
         </DataTable>
+        </View>
       </ScrollView>
+            </ScrollView>
+
+          
+
 
       {/* CREATE / EDIT MODAL */}
       <Portal>
-        <Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={styles.modalBox}>
+        <Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={[
+  styles.modalBox,
+  { width: isWeb ? "45%" : "90%" }
+]}
+>
           <Card>
             <Card.Content>
               <Text style={styles.heading}>
@@ -321,7 +340,11 @@ const ManageEmployees = () => {
 
       {/* DELETE CONFIRM MODAL */}
       <Portal>
-        <Modal visible={confirmVisible} onDismiss={() => setConfirmVisible(false)} contentContainerStyle={styles.confirmModal}>
+        <Modal visible={confirmVisible} onDismiss={() => setConfirmVisible(false)} contentContainerStyle={[
+  styles.confirmModal,
+  { width: isWeb ? "25%" : "85%" }
+]}
+>
           <Card>
             <Card.Content>
               <Text style={styles.confirmText}>Are you sure you want to delete this user?</Text>
@@ -346,7 +369,9 @@ const ManageEmployees = () => {
         onDismiss={() => setSnackVisible(false)}
         duration={2000}
       >
-        {snackMessage}
+        
+          <Text>{snackMessage}</Text>
+
       </Snackbar>
     </Provider>
   );
@@ -391,8 +416,8 @@ primarybutton: {
   message: { marginBottom: 10, fontSize: 15, textAlign: "center" },
   success: { color: "green" },
   error: { color: "red" },
-  modalBox: { backgroundColor: "white", padding: 18, marginHorizontal: 30, borderRadius: 12, elevation: 5, width: "45%", alignSelf: "center" },
-  confirmModal: { backgroundColor: "white", padding: 18, marginHorizontal: 40, borderRadius: 12, elevation: 5, width: "25%", alignSelf: "center" },
+  modalBox: { backgroundColor: "white", padding: 18, marginHorizontal: 30, borderRadius: 12, elevation: 5, alignSelf: "center" },
+  confirmModal: { backgroundColor: "white", padding: 18, marginHorizontal: 40, borderRadius: 12, elevation: 5,  alignSelf: "center" },
   confirmText: { fontSize: 16, marginBottom: 12, textAlign: "center" },
   confirmRow: { flexDirection: "row", justifyContent: "space-between" },
   confirmButton: { marginHorizontal: 6, minWidth: 90 },

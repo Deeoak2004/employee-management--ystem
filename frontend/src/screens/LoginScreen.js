@@ -104,7 +104,7 @@ const LoginScreen = ({ navigation }) => {
             disabled={loading}
             style={styles.loginButton}
           >
-            Login
+           <Text>Login</Text> 
           </Button>
         </Card.Content>
       </Card>

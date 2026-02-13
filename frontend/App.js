@@ -14,7 +14,7 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <PaperProvider> {/* <-- Wrap everything in PaperProvider */}
+    <PaperProvider> 
       <AuthProvider>
         <NavigationContainer>
           <Stack.Navigator initialRouteName="Login">

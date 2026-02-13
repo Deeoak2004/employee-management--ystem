@@ -12,12 +12,16 @@ import {
   Provider,
   Menu,
 } from "react-native-paper";
+import { useWindowDimensions } from "react-native";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from '@react-navigation/native';
 import { getTasks, createTask, updateTask, deleteTask } from "../services/api";
 
 const ManageTasks = () => {
   const navigation = useNavigation();
+  const { width } = useWindowDimensions();
+const isWeb = width > 768;
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
@@ -224,7 +228,11 @@ const allowedStatus = ["Pending", "In-Process", ""];
 
       {/* CREATE / EDIT MODAL */}
       <Portal>
-        <Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={styles.modalBox}>
+        <Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={[
+  styles.modalBox,
+  { width: isWeb ? "45%" : "90%" }
+]}
+>
           <Card>
             <Card.Content>
               <Text style={styles.heading}>{editingTask ? "Edit Task" : "Create Task"}</Text>
@@ -336,7 +344,11 @@ const allowedStatus = ["Pending", "In-Process", ""];
 
       {/* DELETE CONFIRM MODAL */}
       <Portal>
-        <Modal visible={confirmVisible} onDismiss={() => setConfirmVisible(false)} contentContainerStyle={styles.confirmModal}>
+        <Modal visible={confirmVisible} onDismiss={() => setConfirmVisible(false)} contentContainerStyle={[
+  styles.confirmModal,
+  { width: isWeb ? "25%" : "85%" }
+]}
+>
           <Card>
             <Card.Content>
               <Text style={styles.confirmText}>Are you sure you want to delete this task?</Text>
@@ -393,8 +405,8 @@ const styles = StyleSheet.create({
   deleteButton: { width: 100 },
   title: { fontSize: 16, fontWeight: "bold", marginBottom: 5, color: "#333" },
   noTask: { textAlign: "center", marginTop: 20, fontStyle: "italic", color: "#888" },
-  modalBox: { backgroundColor: "white", padding: 20, marginHorizontal: "30%", borderRadius: 12, elevation: 5, width: "40%", alignSelf: "center" },
-  confirmModal: { backgroundColor: "white", padding: 18, marginHorizontal: 40, borderRadius: 12, elevation: 5, width: "25%", alignSelf: "center" },
+  modalBox: { backgroundColor: "white", padding: 20, marginHorizontal: "30%", borderRadius: 12, elevation: 5,  alignSelf: "center" },
+  confirmModal: { backgroundColor: "white", padding: 18, marginHorizontal: 40, borderRadius: 12, elevation: 5,  alignSelf: "center" },
   confirmText: { fontSize: 16, marginBottom: 12, textAlign: "center" },
   confirmRow: { flexDirection: "row", justifyContent: "space-between" },
   confirmButton: { marginHorizontal: 6, minWidth: 90 },

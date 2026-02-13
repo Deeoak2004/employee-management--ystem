@@ -1,14 +1,10 @@
-
-
-
-
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:9000",
+  baseURL: "http://172.17.12.163:8009",
 });
 
-// ---------------- Employees / Users API ----------------
+
 
 export const getAllEmployees = (token) =>
   API.get("/users/get-user", {
@@ -35,12 +31,12 @@ export const updateUser = (id, data, token) =>
     headers: { Authorization: `Bearer ${token}` },
   });
 
+
 export const deleteUser = (id, token) =>
   API.delete(`/users/delete-user/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-// ---------------- Tasks API ----------------
 
 export const getTasks = (token) =>
   API.get("/tasks/get-tasks", {
@@ -66,7 +62,4 @@ export const deleteTask = (id, token) =>
   API.delete(`/tasks/delete-task/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-
-// ---------------- Auth ----------------
-
-export const loginUser = (data) => API.post("/auth/login", data);
+export const loginUser = (data) => API.post("/auth/login", data);   

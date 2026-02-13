@@ -1,21 +1,22 @@
-
 import React, { useContext, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
 import {
   Button,
-  Title,
   Card,
   Portal,
   Dialog,
   Paragraph,
   Text,
 } from "react-native-paper";
+
 import { AuthContext } from "../context/AuthContext";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 const AdminDashboard = ({ navigation }) => {
   const { logout } = useContext(AuthContext);
   const [visible, setVisible] = useState(false);
+
+  const { width } = useWindowDimensions();
+  const isWeb = width > 768;
 
   const showDialog = () => setVisible(true);
   const hideDialog = () => setVisible(false);
@@ -37,7 +38,6 @@ const AdminDashboard = ({ navigation }) => {
           onPress={showDialog}
           textColor="#d32f2f"
           icon="logout"
-          labelStyle={{ fontSize: 16 }}
         >
           Logout
         </Button>
@@ -46,7 +46,6 @@ const AdminDashboard = ({ navigation }) => {
       {/* Main Card */}
       <Card style={styles.card}>
         <Card.Content>
-
           <Button
             mode="contained"
             icon="account-group"
@@ -74,9 +73,14 @@ const AdminDashboard = ({ navigation }) => {
         <Dialog
           visible={visible}
           onDismiss={hideDialog}
-          style={styles.dialog}
+          style={[
+            styles.dialog,
+            { width: isWeb ? "35%" : "85%" },
+          ]}
         >
-          <Dialog.Title style={styles.dialogTitle}>Logout confirmation</Dialog.Title>
+          <Dialog.Title style={styles.dialogTitle}>
+            Logout Confirmation
+          </Dialog.Title>
 
           <Dialog.Content>
             <Paragraph style={styles.dialogText}>
@@ -84,9 +88,23 @@ const AdminDashboard = ({ navigation }) => {
             </Paragraph>
           </Dialog.Content>
 
-          <Dialog.Actions style={{ justifyContent: "space-around" }}>
-            <Button onPress={hideDialog}><button style={styles.censel}>Censel</button></Button>
-            <Button onPress={confirmLogout}><button style={styles.logout}>Yes,Log out !</button ></Button>
+          <Dialog.Actions style={styles.actions}>
+            <Button
+              mode="outlined"
+              onPress={hideDialog}
+              style={styles.cancelBtn}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              mode="contained"
+              onPress={confirmLogout}
+              style={styles.logoutBtn}
+              textColor="#fff"
+            >
+              Yes, Logout
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -101,27 +119,22 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 
-  
   topBar: {
     height: 60,
-    backgroundColor: "#e8edf3",
     borderRadius: 12,
-    elevation: 4,
     paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
+
   headerText: {
     fontSize: 22,
     fontWeight: "700",
     color: "#1e3d59",
   },
 
-  
   card: {
     width: "100%",
     maxWidth: 420,
@@ -131,60 +144,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     alignSelf: "center",
     marginTop: "15%",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
   },
 
-  
   button: {
     marginVertical: 12,
     borderRadius: 12,
     backgroundColor: "#1976d2",
   },
+
   buttonContent: {
     height: 52,
   },
 
-  
   dialog: {
-    width: "30%",
     alignSelf: "center",
     borderRadius: 15,
-    elevation: 5,
   },
-  logout:{
-    //backgroundColor:"#fc0d0dff",
-    //margin:340,
-    borderColor: "#e91224ff",
-    borderWidth: 1,
-    borderRadius: 5,
-    backgroundColor :"#bb0817ff",
-    paddingHorizontal: 10,
-    width: "100%",
-    //color: "#0a07beff",
-    fontSize: 13,
-    //fontWeight: "600",
-    flexDirection: "row",
-    justifyContent: "space-between",
-   // marginTop: 20,
-    paddingVertical:10,
-    paddingHorizontal:80,
-    padding: 15 ,
-    color:"rgba(243, 243, 232, 0.97)"
-    
-  },
-  censel:
-  {  padding: 15 ,
-    borderColor: "rgba(20, 19, 19, 1)",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    width: "100%",
-    fontSize: 13,
-    backgroundColor :"#87b6b0ff",
 
-  },
   dialogTitle: {
     fontSize: 20,
     textAlign: "center",
@@ -194,6 +170,21 @@ const styles = StyleSheet.create({
   dialogText: {
     fontSize: 16,
     textAlign: "center",
+  },
+
+  actions: {
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+  },
+
+  cancelBtn: {
+    borderRadius: 6,
+  },
+
+  logoutBtn: {
+    backgroundColor: "#d32f2f",
+    borderRadius: 6,
   },
 });
 
